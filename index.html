@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GaMon - Raportare Cetățeni</title>
+    <style>
+        body { font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        select, button { width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        button { background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Raportează o zonă cu gunoi</h2>
+    <form id="reportForm">
+        <label>Alege Cartierul:</label>
+        <select id="cartier">
+            <option value="Copou">Copou</option>
+            <option value="Tătărași">Tătărași</option>
+            <option value="Centru">Centru</option>
+            <option value="Păcurari">Păcurari</option>
+        </select>
+
+        <label>Categorie deșeuri:</label>
+        <select id="categorie">
+            <option value="Plastic/Metal">Plastic / Metal</option>
+            <option value="Hartie/Carton">Hârtie / Carton</option>
+            <option value="Menajer">Menajer</option>
+        </select>
+
+        <button type="submit">Trimite Raport</button>
+    </form>
+
+    <p><a href="dashboard.html">Mergi la Dashboard Primărie -></a></p>
+
+    <script>
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                cartier: document.getElementById('cartier').value,
+                categorie: document.getElementById('categorie').value
+            };
+
+            // Trimitere asincronă (AJAX nativ)
+            const response = await fetch('api.php?action=add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            alert(result.message);
+        });
+    </script>
+</body>
+</html>

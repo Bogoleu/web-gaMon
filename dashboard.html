@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>GaMon - Panou Decizional</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
+        .bar-container { display: flex; align-items: center; margin: 15px 0; }
+        .bar-label { width: 100px; }
+        .bar { height: 25px; background-color: #dc3545; color: white; text-align: right; padding-right: 5px; line-height: 25px; font-size: 12px; transition: width 0.5s; }
+        .buttons { margin-bottom: 30px; }
+        a.btn { display: inline-block; padding: 10px 15px; background: #007bff; color: white; text-decoration: none; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Statistici Zone Aglomerate</h2>
+    
+    <div class="buttons">
+        <a href="api.php?action=export_csv" class="btn" style="background:#28a745;">Descarca CSV</a>
+        <a href="api.php?action=export_pdf" target="_blank" class="btn" style="background:#17a2b8;">Descarca PDF</a>
+        <a href="index.html" class="btn" style="background:#6c757d;">Adaugare Raport</a>
+    </div>
+
+    <h3>Top cartiere cu probleme:</h3>
+    <div id="grafic"></div>
+
+    <script>
+        async function loadStats() {
+            const response = await fetch('api.php?action=stats');
+            const data = await response.json();
+            
+            const graficDiv = document.getElementById('grafic');
+            graficDiv.innerHTML = '';
+
+            if(data.length === 0) {
+                graficDiv.innerHTML = '<p>Nu există rapoarte trimise.</p>';
+                return;
+            }
+
+            // Generăm graficul dinamic folosind CSS pur reflectat din datele primite
+            data.forEach(item => {
+                const container = document.createElement('div');
+                container.className = 'bar-container';
+
+                // Calculăm o lățime vizuală (ex: înmulțim cu 40px pentru vizibilitate)
+                const latimeBar = Math.min(item.total * 50, 500); 
+
+                container.innerHTML = `
+                    <div class="bar-label"><strong>${item.cartier}</strong></div>
+                    <div class="bar" style="width: ${latimeBar}px;">${item.total} sesizari</div>
+                `;
+                graficDiv.appendChild(container);
+            });
+        }
+
+        // Încărcăm datele automat la deschiderea paginii
+        loadStats();
+    </script>
+</body>
+</html>
