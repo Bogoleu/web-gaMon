@@ -2,68 +2,259 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GaMon - Raportare Cetățeni</title>
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <title>GaMon - Raportare Cetățeni </title>
     <style>
-        body { font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 40px auto;
-            padding: 20px;
+        body{
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: antiquewhite;
         }
-        select, button { width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+        .container {
+            display: flex;
+            gap:50px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        button { background: #28a745;
+        .coloana-stanga{
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius:8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .coloana-dreapta{
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius:8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        select,button {
+            with: 100%;
+            padding: 12px;
+            margin: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        button{
+            background:#28a745;
             color: white;
             border: none;
-            cursor: pointer;
+            font-weight: bold;
+            cursor:pointer;
+            transition: all 0.3s ease-in-out;
         }
+        button:hover{
+            background: #218838;
+            transform: scale(1.03);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        h2{
+            color: #333;
+            margin-top: 0;
+        }
+        /* ===LIVE TABLE=== */
+        .rand-tabel{
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .eticheta-zona {
+            width: 180px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .spatiu-bara{
+            flex:1;
+            margin:0 15px;
+            display: flex;
+            align-items:center;
+        }
+
+        .bara-totala {
+            height: 20px;
+            background-color: #e0e0e0;
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .felie-albastra {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s;
+        }
+        .felie-verde {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s;
+        }
+
+        .total-text {
+            width: 40px;
+            text-align: right;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+        .titlu-cartier {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #ddd;
+            color: #333; }
     </style>
 </head>
 <body>
-    <h2>Raportează o zonă cu gunoi</h2>
-    <form id="reportForm">
-        <label>Alege Cartierul:</label>
-        <select id="cartier">
-            <option value="Copou">Copou</option>
-            <option value="Tătărași">Tătărași</option>
-            <option value="Centru">Centru</option>
-            <option value="Păcurari">Păcurari</option>
-        </select>
-
-        <label>Categorie deșeuri:</label>
-        <select id="categorie">
-            <option value="Plastic/Metal">Plastic / Metal</option>
-            <option value="Hartie/Carton">Hârtie / Carton</option>
-            <option value="Menajer">Menajer</option>
-        </select>
-
-        <button type="submit">Trimite Raport</button>
-    </form>
-
-    <p><a href="dashboard.html">Mergi la Dashboard Primărie -></a></p>
+    <div class="container">
+        <div class="coloana-stanga"id ="form-shell"> Loading Form </div>
+        <div class="coloana-dreapta">
+            <h2>Rapoarte Live pe Zone</h2>
+            <div id="tabel-live"> Loading Data </div>
+        </div>
+    </div>
 
     <script>
+        const structuraLocatii = {
+            "Iași": {
+                 "Copou": ["Punct Colectare Codrescu", "Punct Colectare Triumf", "Misc / Ilegal"],
+                 "Tătărași": ["Punct Colectare Dispecer", "Punct Colectare Ateneu", "Misc / Ilegal"],
+                 "Centru": ["Punct Colectare Sf. Lazăr", "Punct Colectare Palas", "Misc / Ilegal"]
+           },
+           "Pașcani": {
+                "Centru": ["Punct Colectare Gară", "Misc / Ilegal"],
+               "Suburbie": ["Punct Colectare Principal", "Misc / Ilegal"]
+            }
+        };
+
+        function renderForm() {
+            const formShell = document.getElementById('form-shell');
+            formShell.innerHTML = `
+                <h2>Raportează un incident</h2>
+                <form id="reportForm">
+                    <label>Oraș:</label>
+                    <select id="oras"></select>
+
+                    <label>Cartier:</label>
+                    <select id="cartier"></select>
+
+                    <label>Zonă Colectare / Depozitare:</label>
+                    <select id="zona_depozitare"></select>
+
+                    <label>Categorie deșeuri:</label>
+                    <select id="categorie">
+                        <option value="Menajer">Menajer</option>
+                        <option value="Hartie">Hârtie / Carton</option>
+                        <option value="Plastic">Plastic / Metal</option>
+                    </select>
+
+                    <button type="submit">Trimite Raport</button>
+                </form>
+                <p><a href="dashboard.html">Mergi la Dashboard Primărie -></a></p>`;
+            const orasSelect = document.getElementById('oras');
+            const cartierSelect = document.getElementById('cartier');
+            const zonaSelect = document.getElementById('zona_depozitare');
+
+            Object.keys(structuraLocatii).forEach(oras => {
+                orasSelect.innerHTML += `<option value="${oras}">${oras}</option>`;
+            })
+
+            function actualizeazaCartiere() {
+                const orasSelectat = orasSelect.value;
+                cartierSelect.innerHTML = "";
+                Object.keys(structuraLocatii[orasSelectat]).forEach(cartier => {
+                    cartierSelect.innerHTML += `<option value="${cartier}">${cartier}</option>`;
+                });
+                actualizeazaZone();
+            }
+
+            function actualizeazaZone() {
+                const orasSelectat = orasSelect.value;
+                const cartierSelectat = cartierSelect.value;
+                zonaSelect.innerHTML = "";
+                structuraLocatii[orasSelectat][cartierSelectat].forEach(zona => {
+                    zonaSelect.innerHTML += `<option value="${zona}">${zona}</option>`;
+                });
+            }
+        orasSelect.addEventListener('change', actualizeazaCartiere);
+        cartierSelect.addEventListener('change', actualizeazaZone);
+        actualizeazaCartiere();
+
         document.getElementById('reportForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const data = {
-                cartier: document.getElementById('cartier').value,
+                oras: orasSelect.value,
+                cartier: cartierSelect.value,
+                zona_depozitare: zonaSelect.value,
                 categorie: document.getElementById('categorie').value
             };
 
-            // Trimitere asincronă (AJAX nativ)
             const response = await fetch('api.php?action=add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            
             const result = await response.json();
             alert(result.message);
+            loadLiveTable();
         });
+
+        }
+        async function loadLiveTable() {
+            const response = await fetch('api.php?action=live_table');
+            const data = await response.json();
+
+            const tabelDiv = document.getElementById('tabel-live');
+            tabelDiv.innerHTML = '';
+
+            if (data.length === 0) {
+                tabelDiv.innerHTML = '<p>Nu sunt rapoarte înregistrate.</p>';
+                return;
+            }
+
+            const maxTotalGlobal = Math.max(...data.map(item => item.total));
+
+            const dateGrupate = {};
+            data.forEach(item => {
+                const cheie = `${item.oras} - ${item.cartier}`;
+                if (!dateGrupate[cheie]) dateGrupate[cheie] = [];
+                dateGrupate[cheie].push(item);
+            });
+
+            Object.keys(dateGrupate).forEach(cartier => {
+                tabelDiv.innerHTML += `<h3 class="titlu-cartier">${cartier}</h3>`;
+
+                dateGrupate[cartier].forEach(item => {
+                    const lungimeBaraFataDeMax = (item.total / maxTotalGlobal) * 100;
+                    const procentNerezolvate = (item.nerezolvate / item.total) * 100;
+                    const procentRezolvate = (item.rezolvate / item.total) * 100;
+
+                    const rand = document.createElement('div');
+                    rand.className = 'rand-tabel';
+                    rand.innerHTML = `
+                        <div class="eticheta-zona">${item.zona_depozitare}</div>
+                        <div class="spatiu-bara">
+                            <div class="bara-totala" style="width: ${lungimeBaraFataDeMax}%;">
+                                <div class="felie-albastra" style="width: ${procentNerezolvate}%;" title="${item.nerezolvate} nerezolvate"></div>
+                                <div class="felie-verde" style="width: ${procentRezolvate}%;" title="${item.rezolvate} rezolvate"></div>
+                            </div>
+                        </div>
+                        <div class="total-text">${item.total}</div>
+                    `;
+                    tabelDiv.appendChild(rand);
+                });
+            });
+        }
+
+        renderForm();
+        loadLiveTable();
     </script>
 </body>
 </html>
