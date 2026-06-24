@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <meta name="viewport" content="width=device-width"  initial-scale="1.0">
     <title>GaMon - Raportare Cetățeni </title>
     <style>
         body{
@@ -34,11 +34,57 @@
         }
 
         select,button {
-            with: 100%;
+            width: 100%;
             padding: 12px;
             margin: 10px;
             border-radius: 4px;
             border: 1px solid #ccc;
+        }
+
+        select{
+            padding:12px 15px;
+            background-color: #afffaf;
+            font-size:15px;
+            color:#333;
+            cursor:pointer;
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat:no-repeat;
+            bacground-position:right 15px center;
+            background-size:16px;
+            transition: all 0.2s ease;
+        }
+
+        select:focus{
+            outline:none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+            background-color: #fff;
+        }
+
+        .campion-banner{
+            background: linear-gradient(135deg, #ffd700, #ffb300);
+            color: #000;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 16px;
+        }
+
+        .buton-afisare{
+            background:#6c757d;
+            margin-top:15px;
+        }
+
+        .buton-afisare:hover{
+            background: #5a6268;
+            transfoem: scale(1.01);
+        }
+        .ascuns{
+            display:none !important;
         }
 
         button{
@@ -183,7 +229,7 @@
                     zonaSelect.innerHTML += `<option value="${zona}">${zona}</option>`;
                 });
             }
-        orasSelect.addEventListener('change', actualizeazaCartiere);
+        orasSelect.addEventListener('change', () =>{actualizeazaCartiere();loadLiveTable();});
         cartierSelect.addEventListener('change', actualizeazaZone);
         actualizeazaCartiere();
 
@@ -202,56 +248,112 @@
                 body: JSON.stringify(data)
             });
             const result = await response.json();
-            alert(result.message);
+
+            const btnSubmit = e.target.querySelector('button[type="submit"]');
+            const textInitial = btnSubmit.innerText;
+
+            btnSubmit.innerText = "Trimis! " + result.message;
+            btnSubmit.style.background = "#218838";
+
+            setTimeout(() => {
+                btnSubmit.innerText = textInitial;
+                btnSubmit.style.background = "";
+            }, 2000);
             loadLiveTable();
         });
 
         }
+
         async function loadLiveTable() {
-            const response = await fetch('api.php?action=live_table');
-            const data = await response.json();
+            try{
+                const response = await fetch('api.php?action=live_table');
+            const dataToate = await response.json();
 
             const tabelDiv = document.getElementById('tabel-live');
             tabelDiv.innerHTML = '';
 
+            const orasSelect = document.getElementById('oras');
+            if (!orasSelect) return;
+            const orasCurent = orasSelect.value;
+
+            const data = dataToate.filter(item => item.oras === orasCurent);
+
             if (data.length === 0) {
-                tabelDiv.innerHTML = '<p>Nu sunt rapoarte înregistrate.</p>';
+
+                tabelDiv.innerHTML = '<p> Nu sunt rapoarte inregistrate aici</p>';
                 return;
             }
-
-            const maxTotalGlobal = Math.max(...data.map(item => item.total));
-
-            const dateGrupate = {};
+            const rapoarteCartiere = {};
             data.forEach(item => {
-                const cheie = `${item.oras} - ${item.cartier}`;
-                if (!dateGrupate[cheie]) dateGrupate[cheie] = [];
-                dateGrupate[cheie].push(item);
+                if (!rapoarteCartiere[item.cartier]) rapoarteCartiere[item.cartier] = 0;
+                rapoarteCartiere[item.cartier] += parseInt(item.nerezolvate);
             });
 
-            Object.keys(dateGrupate).forEach(cartier => {
-                tabelDiv.innerHTML += `<h3 class="titlu-cartier">${cartier}</h3>`;
+            let campion = null;
+            let minNerezolvate = Infinity;
+            for (const [cartier, nerezolvate] of Object.entries(rapoarteCartiere)) {
+                if (nerezolvate < minNerezolvate) {
+                    minNerezolvate = nerezolvate;
+                    campion = cartier;
+                }
+            }
 
-                dateGrupate[cartier].forEach(item => {
-                    const lungimeBaraFataDeMax = (item.total / maxTotalGlobal) * 100;
-                    const procentNerezolvate = (item.nerezolvate / item.total) * 100;
-                    const procentRezolvate = (item.rezolvate / item.total) * 100;
+            if (campion) {
+                tabelDiv.innerHTML += `
+                <div class="campion-banner">
+                    Campionul curateniei: <span> ${campion.toUpperCase()}</span>
+                    <div style="font-size: 12px; font-weight: normal; margin-top: 5px;"></div>
+                </div>`
+            }
 
-                    const rand = document.createElement('div');
-                    rand.className = 'rand-tabel';
-                    rand.innerHTML = `
-                        <div class="eticheta-zona">${item.zona_depozitare}</div>
-                        <div class="spatiu-bara">
-                            <div class="bara-totala" style="width: ${lungimeBaraFataDeMax}%;">
-                                <div class="felie-albastra" style="width: ${procentNerezolvate}%;" title="${item.nerezolvate} nerezolvate"></div>
-                                <div class="felie-verde" style="width: ${procentRezolvate}%;" title="${item.rezolvate} rezolvate"></div>
-                            </div>
+            data.sort((a, b) => b.total - a.total);
+            const maxTotalGlobal = data[0].total;
+            const listaZone = document.createElement('div');
+
+            data.forEach((item, index) => {
+                const lungimeBaraFataDeMax = (item.total / maxTotalGlobal) * 100;
+                const procentNerezolvate = (item.nerezolvate / item.total) * 100;
+                const procentRezolvate = (item.rezolvate / item.total) * 100;
+
+                const rand = document.createElement('div');
+                rand.className = 'rand-tabel';
+                if (index >= 10) rand.classList.add('rand-ascuns', 'ascuns');
+
+                rand.innerHTML = `
+                    <div class="eticheta-zona">
+                        ${item.zona_depozitare}
+                        <div style="font-size: 11px; color: #777; margin-top: 3px;">${item.cartier}</div>
+                    </div>
+                    <div class="spatiu-bara">
+                        <div class="bara-totala" style="width: ${lungimeBaraFataDeMax}%;">
+                            <div class="felie-albastra" style="width: ${procentNerezolvate}%;" title="${item.nerezolvate} nerezolvate"></div>
+                            <div class="felie-verde" style="width: ${procentRezolvate}%;" title="${item.rezolvate} rezolvate"></div>
                         </div>
-                        <div class="total-text">${item.total}</div>
-                    `;
-                    tabelDiv.appendChild(rand);
-                });
+                    </div>
+                    <div class="total-text">${item.total}</div>
+                `;
+                listaZone.appendChild(rand);
+
             });
-        }
+
+            tabelDiv.appendChild(listaZone);
+
+            if (data.length > 10) {
+                const btnMaiMult = document.createElement('button');
+                btnMaiMult.className = 'buton-afisare';
+                btnMaiMult.innerText = `Vezi toate cele ${data.length} zone raportate`;
+
+                btnMaiMult.addEventListener('click', () => {
+                    const ascunse = listaZone.querySelectorAll('.rand-ascuns');
+                    const isAscuns = ascunse[0].classList.contains('ascuns');
+                    ascunse.forEach(el => el.classList.toggle('ascuns'));
+                    btnMaiMult.innerText = isAscuns ? 'Acunde topul' : `Vezi toate cele ${data.length} zone raportate`
+                });
+                tabelDiv.appendChild(btnMaiMult);
+            }
+        }catch (eroare) {
+                console.error("Am prins o eroare invizibilă: ", eroare);}
+        }//loadLiveTable
 
         renderForm();
         loadLiveTable();

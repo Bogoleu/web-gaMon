@@ -40,7 +40,6 @@ if ($action === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ACTION: Ia datele pentru grafice (Apelat din dashboard.html)
 if ($action === 'stats') {
-    // Numărăm rapoartele pe cartiere
     $stmt = $db->query("SELECT cartier, COUNT(*) as total FROM reports GROUP BY cartier ORDER BY total DESC");
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
     echo json_encode($data);
