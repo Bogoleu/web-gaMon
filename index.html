@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GaMon - Raportare Cetățeni</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: antiquewhite; }
+        body { font-family: Arial, sans-serif; margin: 40px; background: #212529; }
         .container { display: flex; gap: 50px; max-width: 1200px; margin: 0 auto; }
         .coloana-stanga, .coloana-dreapta { flex: 1; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; }
 
         /* Design pentru dropdown */
         select {
-            background-color: #afffaf;
+            background-color: #c0ffee;
             cursor: pointer;
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -64,7 +64,7 @@
             </select>
             <button type="submit">Trimite Raport</button>
         </form>
-        <a href="login_primarie.html" class="btn-primarie">🏢 Autentificare Administrație ➔</a>
+        <a href="login_primarie.html" class="btn-primarie">Autentificare Administrație ➔</a>
     </div>
     <div class="coloana-dreapta">
         <h2>Rapoarte Live pe Zone</h2>
@@ -157,7 +157,7 @@
 
         const btn = e.target.querySelector('button[type="submit"]');
         const textInitial = btn.innerText;
-        btn.innerText = "✅ " + result.message;
+        btn.innerText = " " + result.message;
         btn.style.background = "#218838";
 
         setTimeout(() => {
@@ -208,7 +208,7 @@
             if (campion) {
                 tabelDiv.innerHTML += `
                         <div class="campion-banner">
-                            🏆 Campionul curățeniei: <span>${campion.toUpperCase()}</span>
+                             Campionul curățeniei: <span>${campion.toUpperCase()}</span>
                         </div>
                     `;
             }
@@ -255,7 +255,7 @@
                     if (ascunse.length === 0) return;
                     const isAscuns = ascunse[0].classList.contains('ascuns');
                     ascunse.forEach(el => el.classList.toggle('ascuns'));
-                    btnMaiMult.innerText = isAscuns ? 'Ascunde topul ⬆️' : `Vezi toate cele ${data.length} zone raportate ⬇️`;
+                    btnMaiMult.innerText = isAscuns ? 'Ascunde topul ⬆' : `Vezi toate cele ${data.length} zone raportate ⬇`;
                 });
                 tabelDiv.appendChild(btnMaiMult);
             }

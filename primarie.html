@@ -8,7 +8,7 @@
         body{
             font-family: Arial, sans-serif;
             margin: 40px;
-            background: antiquewhite;
+            background: #212529;
         }
         .container {
             display: flex;
@@ -253,7 +253,7 @@
     }
 
     // Afișăm instituția și contul oficial de e-mail
-    document.getElementById('infoPrimarie').innerHTML = `🏢 Primăria: ${user.oras}<br>✉️ Cont: ${user.username}`;
+    document.getElementById('infoPrimarie').innerHTML = `Primăria: ${user.oras}<br> Mail: ${user.username}`;
 
     let structuraLocatii = {};
 
@@ -381,7 +381,7 @@
             if (campion) {
                 tabelDiv.innerHTML += `
                         <div class="campion-banner">
-                            🏆 Campionul curățeniei în ${orasCurent}: <span>${campion.toUpperCase()}</span>
+                             Campionul curățeniei în ${orasCurent}: <span>${campion.toUpperCase()}</span>
                         </div>
                     `;
             }

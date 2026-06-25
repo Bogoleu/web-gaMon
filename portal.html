@@ -28,9 +28,9 @@
             top: 50%; 
             left: 50%; 
             transform: translate(-50%, -50%); 
-            width: 150px; 
-            height: 150px; 
-            border: 4px solid #fff; 
+            width: 300px;
+            height: 300px;
+            border: 4px solid #fff;
             border-radius: 50%; 
             display: flex; 
             justify-content: center; 
@@ -39,7 +39,7 @@
             font-weight: bold; 
             color: #fff; 
             letter-spacing: 2px; 
-            box-shadow: 0 0 20px rgba(255,255,255,0.1), inset 0 0 20px rgba(255,255,255,0.1); 
+            box-shadow: 0 0 20px rgba(255,255,255,0.1), inset 0 0 20px rgba(255,255,255,0.5);
             cursor: default;
         }
 
@@ -57,15 +57,16 @@
             text-decoration: none; 
             font-size: 15px; 
             transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
-            text-align: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-align: center;
+
         }
 
         .node:hover { 
             transform: scale(1.1); 
             filter: brightness(1.2); 
             z-index: 10; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 25px rgba(255,255,255,0.1);
         }
 
         /* Geometria triunghiului echilateral (Raza = 160px) */
@@ -74,7 +75,8 @@
         .node-primarie { 
             background: #007bff; 
             top: calc(50% - 160px - 55px); 
-            left: calc(50% - 55px); 
+            left: calc(50% - 55px);
+            box-shadow: 0 0 20px rgba(255,255,255,0.5)
         }
         
         /* Vârful din dreapta-jos */
@@ -83,13 +85,15 @@
             color: #000; 
             top: calc(50% + 80px - 55px); /* 160 * sin(30) */
             left: calc(50% + 138px - 55px); /* 160 * cos(30) */
+            box-shadow: 0 0 20px rgba(255,255,255,0.5)
         }
         
         /* Vârful din stânga-jos */
         .node-cetateni { 
             background: #28a745; 
             top: calc(50% + 80px - 55px); 
-            left: calc(50% - 138px - 55px); 
+            left: calc(50% - 138px - 55px);
+            box-shadow: 0 0 20px rgba(255,255,255,0.5)
         }
     </style>
 </head>
