@@ -1,114 +1,148 @@
-<?php // Aici spun ca e limbaj php (toate fisierele php incep asa)
-//header este o functie de trimis instructiuni inainte d a trimite date
+<?php
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=UTF-8");
 
-header("Access-Control-Allow-Origin: *"); //Permite paginii sa vb cu API fara sa fie blocate de "CORS"?
-header("Content-Type: application/json; charset=UTF-8"); //Browserul stie ca e vorba de date brute JSON
-
-// 1. Conectare la SQLite (creează fișierul automat dacă nu există)
-$db = new PDO('sqlite:database.db'); //( $ = o variabila, dar php stie automat;PDO este Librarie pt baze de date)
+$db = new PDO('sqlite:database.db');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-//$db->exec("DROP TABLE IF EXISTS reports");
-// 2. Creare tabelă dacă nu există (Prepared statements nativ pentru siguranță)
+
+// 1. Creare tabele dinamicce
 $db->exec("CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     oras TEXT,
     cartier TEXT,
     categorie TEXT,
     zona_depozitare TEXT,
-    status TEXT DEFAULT 'Nerezolvat',
+    status TEXT DEFAULT 'Nerezolvat', /* Nerezolvat, In Lucru, Curatat, Soluționat */
+    echipa_alocata TEXT DEFAULT 'Neasignat',
     data_creare DATE DEFAULT CURRENT_DATE
 )");
 
-// Prevenire SQL Injection: Toate cererile folosesc parametrii propuși de PDO
+$db->exec("CREATE TABLE IF NOT EXISTS locatii (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    oras TEXT,
+    cartier TEXT,
+    zona_depozitare TEXT
+)");
 
-$action = $_GET['action'] ?? ''; // Acel action este inlocuit dupa de actiunea prorpiu zisa care e verificata mai jos
+$db->exec("CREATE TABLE IF NOT EXISTS utilizatori (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    role TEXT, /* primarie, salubris */
+    oras TEXT,
+    cartier_alocat TEXT DEFAULT NULL
+)");
 
+// Populare inițială cu date de test (dacă tabelele sunt goale)
+$verifLoc = $db->query("SELECT COUNT(*) FROM locatii")->fetchColumn();
+if ($verifLoc == 0) {
+    $db->exec("INSERT INTO locatii (oras, cartier, zona_depozitare) VALUES
+        ('Iași', 'Copou', 'Punct Colectare Codrescu'),
+        ('Iași', 'Copou', 'Punct Colectare Triumf'),
+        ('Iași', 'Copou', 'Misc / Ilegal'),
+        ('Iași', 'Tătărași', 'Punct Colectare Dispecer'),
+        ('Iași', 'Centru', 'Punct Colectare Palas'),
+        ('Pașcani', 'Centru', 'Punct Colectare Gară')");
+}
+
+$verifUser = $db->query("SELECT COUNT(*) FROM utilizatori")->fetchColumn();
+if ($verifUser == 0) {
+    // Conturi de test: primarie / iasi123  SI  salubris / copou123
+    $db->exec("INSERT INTO utilizatori (username, password, role, oras, cartier_alocat) VALUES
+        ('primarie', 'iasi123', 'primarie', 'Iași', NULL),
+        ('salubris', 'copou123', 'salubris', 'Iași', 'Copou')");
+}
+
+// 2. CRON JOB INVIZIBIL: Șterge automat soluționările mai vechi de 30 de zile
+$db->exec("DELETE FROM reports WHERE status = 'Soluționat' AND data_creare <= date('now', '-30 days')");
+
+$action = $_GET['action'] ?? '';
+
+// AUTH: Login system
+if ($action === 'login' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $stmt = $db->prepare("SELECT username, role, oras, cartier_alocat FROM utilizatori WHERE username = :u AND password = :p");
+    $stmt->execute([':u' => $input['username'], ':p' => $input['password']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        echo json_encode(["status" => "success", "user" => $user]);
+    } else {
+        echo json_encode(["status" => "error", "message" => "Date incorecte!"]);
+    }
+    exit;
+}
+
+// LOCATIONS: Adăugare zonă nouă de către Primărie
+if ($action === 'add_location' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $stmt = $db->prepare("INSERT INTO locatii (oras, cartier, zona_depozitare) VALUES (:o, :c, :z)");
+    $stmt->execute([':o' => $input['oras'], ':c' => $input['cartier'], ':z' => $input['zona_depozitare']]);
+    echo json_encode(["status" => "success"]);
+    exit;
+}
+
+// LOCATIONS: Extragere structură arborescentă pentru Dropdowns
+if ($action === 'get_locations') {
+    $stmt = $db->query("SELECT oras, cartier, zona_depozitare FROM locatii");
+    $raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $structura = [];
+    foreach ($raw as $row) {
+        $o = $row['oras']; $c = $row['cartier']; $z = $row['zona_depozitare'];
+        if (!isset($structura[$o])) $structura[$o] = [];
+        if (!isset($structura[$o][$c])) $structura[$o][$c] = [];
+        if (!in_array($z, $structura[$o][$c])) $structura[$o][$c][] = $z;
+    }
+    echo json_encode($structura);
+    exit;
+}
+
+// ACTION: Adăugare sesizare cetățean
 if ($action === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
-    $stmt = $db->prepare("INSERT INTO reports (oras,cartier,zona_depozitare, categorie) VALUES (:oras, :cartier,:zona_depozitare, :categorie)");
+    $stmt = $db->prepare("INSERT INTO reports (oras, cartier, zona_depozitare, categorie) VALUES (:oras, :cartier, :zona_depozitare, :categorie)");
     $stmt->execute([
-        ':oras' => htmlspecialchars($input['oras']),
-        ':cartier' => htmlspecialchars($input['cartier']), // Prevenire XSS
-        ':zona_depozitare' => htmlspecialchars($input['zona_depozitare']),
-        ':categorie' => htmlspecialchars($input['categorie'])
+        ':oras' => htmlspecialchars($input['oras']), ':cartier' => htmlspecialchars($input['cartier']),
+        ':zona_depozitare' => htmlspecialchars($input['zona_depozitare']), ':categorie' => htmlspecialchars($input['categorie'])
     ]);
-    
-    echo json_encode(["status" => "success", "message" => "Raport salvat!"]);
+    echo json_encode(["status" => "success", "message" => "Raport înregistrat!"]);
     exit;
 }
 
-// ACTION: Ia datele pentru grafice (Apelat din dashboard.html)
-if ($action === 'stats') {
-    $stmt = $db->query("SELECT cartier, COUNT(*) as total FROM reports GROUP BY cartier ORDER BY total DESC");
-    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode($data);
-    exit;
-}
-
+// ACTION: Live Table combinat
 if($action === 'live_table') {
-    $sql= "SELECT oras, cartier, zona_depozitare,
-                       SUM(CASE WHEN status = 'Nerezolvat' THEN 1 ELSE 0 END) as nerezolvate,
-                       SUM(CASE WHEN status = 'Soluționat' THEN 1 ELSE 0 END) as rezolvate,
-                       COUNT(*) as total
-                       FROM reports
-                       GROUP BY oras, cartier, zona_depozitare
-                       ORDER BY total ASC";
-
-
-    $stmt = $db->query($sql);
-    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode($data);
+    $sql = "SELECT oras, cartier, zona_depozitare,
+            SUM(CASE WHEN status != 'Soluționat' THEN 1 ELSE 0 END) as nerezolvate,
+            SUM(CASE WHEN status = 'Soluționat' THEN 1 ELSE 0 END) as rezolvate,
+            COUNT(*) as total
+            FROM reports GROUP BY oras, cartier, zona_depozitare ORDER BY total DESC";
+    echo json_encode($db->query($sql)->fetchAll(PDO::FETCH_ASSOC));
     exit;
 }
 
-// ACTION: Export CSV
-if ($action === 'export_csv') {
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="raport_gamon.csv"');
-    
-    $output = fopen('php://output', 'w');
-    fputcsv($output, ['ID', 'Cartier', 'Categorie', 'Status', 'Data']);
-    
-    $stmt = $db->query("SELECT * FROM reports");
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        fputcsv($output, $row);
+// ACTION: Listare toate incidentele pentru panourile administrative
+if ($action === 'admin_reports') {
+    $stmt = $db->query("SELECT * FROM reports ORDER BY id DESC");
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+// ACTION: Schimbare Status / Alocare flux salubrizare
+if ($action === 'update_report_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $sql = "UPDATE reports SET status = :status";
+    $params = [':status' => $input['status'], ':id' => $input['id']];
+
+    if (isset($input['echipa'])) {
+        $sql .= ", echipa_alocata = :echipa";
+        $params[':echipa'] = $input['echipa'];
     }
-    fclose($output);
+    $sql .= " WHERE id = :id";
+
+    $stmt = $db->prepare($sql);
+    $stmt->execute($params);
+    echo json_encode(["status" => "success"]);
     exit;
 }
-
-// EXPORT PDF: TODO-> DASHBOARD CHANGE
-if ($action === 'export_pdf') {
-    require('fpdf.php');
-
-    $pdf = new FPDF();
-    $pdf->AddPage();
-    $pdf->SetFont('Arial','B', 16);
-    //Titlu
-    $pdf->Cell(0,10, 'Raport GaMon - Situatie', 0, 1,'C');
-    $pdf->Ln(10); //E vorba de mm de spatiu gol
-
-    //Antet tabel
-    $pdf->SetFont('Arial','B', 12 );
-    $pdf->Cell(20,10,'ID',1);
-    $pdf->Cell(50,10,'Cartier',1);
-    $pdf->Cell(60,10,'Categorie',1);
-    $pdf->Cell(40,10,'Status',1);
-    $pdf->Ln(); //Asa e doar un rand
-
-    //Extragere din baza de date
-    $pdf->SetFont('Arial','',12);
-    $stmt = $db->query("SELECT * FROM reports");
-
-while ($row = $stmt->fetch(PDO::FETCH_ASSOC)){
-        $pdf->Cell(15,10, $row['id'], 1);
-        $pdf->Cell(45,10, $row['cartier'], 1);
-        $pdf->Cell(50,10, $row['zona_depozitare'], 1);
-        $pdf->Cell(45,10, $row['categorie'], 1);
-        $pdf->Cell(35,10, $row['status'], 1);
-        $pdf->Ln();
-    }
-    $pdf->Output('D','Raport_GaMon.pdf');
-    exit;
-}
+?>

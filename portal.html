@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GaMon - Portal de Acces</title>
+    <style>
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            background: #212529; /* Un fundal închis elegant */
+            font-family: Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+
+        .gamon-universe { 
+            position: relative; 
+            width: 400px; 
+            height: 400px; 
+        }
+
+        /* Inelul central gol */
+        .ring-center { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 150px; 
+            height: 150px; 
+            border: 4px solid #fff; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 32px; 
+            font-weight: bold; 
+            color: #fff; 
+            letter-spacing: 2px; 
+            box-shadow: 0 0 20px rgba(255,255,255,0.1), inset 0 0 20px rgba(255,255,255,0.1); 
+            cursor: default;
+        }
+
+        /* Nodurile solide (Cercurile exterioare) */
+        .node { 
+            position: absolute; 
+            width: 110px; 
+            height: 110px; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-weight: bold; 
+            color: white; 
+            text-decoration: none; 
+            font-size: 15px; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+            text-align: center; 
+        }
+
+        .node:hover { 
+            transform: scale(1.1); 
+            filter: brightness(1.2); 
+            z-index: 10; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        /* Geometria triunghiului echilateral (Raza = 160px) */
+        
+        /* Vârful de SUS */
+        .node-primarie { 
+            background: #007bff; 
+            top: calc(50% - 160px - 55px); 
+            left: calc(50% - 55px); 
+        }
+        
+        /* Vârful din dreapta-jos */
+        .node-salubris { 
+            background: #ffc107; 
+            color: #000; 
+            top: calc(50% + 80px - 55px); /* 160 * sin(30) */
+            left: calc(50% + 138px - 55px); /* 160 * cos(30) */
+        }
+        
+        /* Vârful din stânga-jos */
+        .node-cetateni { 
+            background: #28a745; 
+            top: calc(50% + 80px - 55px); 
+            left: calc(50% - 138px - 55px); 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="gamon-universe">
+        <div class="ring-center">GaMon</div>
+        
+        <a href="login.html" class="node node-primarie">Admin<br>Primărie</a>
+        
+        <a href="login.html" class="node node-salubris">Echipă<br>Salubris</a>
+        
+        <a href="index.html" class="node node-cetateni">Portal<br>Cetățeni</a>
+    </div>
+
+</body>
+</html>
