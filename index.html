@@ -9,21 +9,37 @@
         .container { display: flex; gap: 50px; max-width: 1200px; margin: 0 auto; }
         .coloana-stanga, .coloana-dreapta { flex: 1; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 4px; border: 1px solid #ccc; font-size: 15px; }
-        select { background-color: #afffaf; cursor: pointer; }
+
+        /* Design pentru dropdown */
+        select {
+            background-color: #afffaf;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+        }
+
         button { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; transition: all 0.3s; }
         button:hover { background: #218838; transform: scale(1.02); }
+
         .btn-primarie { display: block; text-align: center; background-color: #495057; color: white; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 25px; transition: all 0.3s; }
-        .btn-primarie:hover { background-color: #343a40; }
-        .campion-banner { background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+        .btn-primarie:hover { background-color: #343a40; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.15);}
+
+        .campion-banner { background: linear-gradient(135deg, #ffd700, #ffb300); color: #000; padding: 15px; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
         .rand-tabel { display: flex; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         .eticheta-zona { width: 180px; font-weight: bold; font-size: 14px; }
-        .spatiu-bara { flex: 1; margin: 0 15px; }
-        .bara-totala { height: 20px; background-color: #e0e0e0; display: flex; border-radius: 4px; overflow: hidden; }
-        .felie-albastra { height: 100%; background-color: #007bff; }
-        .felie-verde { height: 100%; background-color: #28a745; }
-        .total-text { width: 40px; text-align: right; font-weight: bold; }
+        .spatiu-bara { flex: 1; margin: 0 15px; display: flex; align-items: center;}
+        .bara-totala { height: 20px; background-color: #e0e0e0; display: flex; border-radius: 4px; overflow: hidden; width: 100%;}
+        .felie-albastra { height: 100%; background-color: #007bff; transition: width 0.3s;}
+        .felie-verde { height: 100%; background-color: #28a745; transition: width 0.3s;}
+        .total-text { width: 40px; text-align: right; font-weight: bold; font-size: 14px; color: #555;}
+
         .ascuns { display: none !important; }
-        .buton-afisare { background: #6c757d; color: white; }
+        .buton-afisare { background: #6c757d; color: white; margin-top: 15px;}
+        .buton-afisare:hover { background: #5a6268; transform: scale(1.01);}
     </style>
 </head>
 <body>
@@ -31,9 +47,15 @@
     <div class="coloana-stanga">
         <h2>Raportează un incident</h2>
         <form id="reportForm">
-            <label>Oraș:</label><select id="oras"></select>
-            <label>Cartier:</label><select id="cartier"></select>
-            <label>Zonă Depozitare:</label><select id="zona_depozitare"></select>
+            <label>Oraș:</label>
+            <select id="oras"></select>
+
+            <label>Cartier:</label>
+            <select id="cartier"></select>
+
+            <label>Zonă Depozitare:</label>
+            <select id="zona_depozitare"></select>
+
             <label>Categorie deșeuri:</label>
             <select id="categorie">
                 <option value="Menajer">Menajer</option>
@@ -42,7 +64,7 @@
             </select>
             <button type="submit">Trimite Raport</button>
         </form>
-        <a href="login.html" class="btn-primarie">Autentificare Administrație ➔</a>
+        <a href="login.html" class="btn-primarie">🏢 Autentificare Administrație ➔</a>
     </div>
     <div class="coloana-dreapta">
         <h2>Rapoarte Live pe Zone</h2>
@@ -54,27 +76,44 @@
     let structuraLocatii = {};
 
     async function init() {
-        const res = await fetch('api.php?action=get_locations');
-        structuraLocatii = await res.json();
+        try {
+            // Preia automat zonele din baza de date
+            const res = await fetch('api.php?action=get_locations');
+            structuraLocatii = await res.json();
 
-        const orasSelect = document.getElementById('oras');
-        orasSelect.innerHTML = '';
-        Object.keys(structuraLocatii).forEach(o => {
-            orasSelect.innerHTML += `<option value="${o}">${o}</option>`;
-        });
+            const orasSelect = document.getElementById('oras');
+            orasSelect.innerHTML = '';
 
-        orasSelect.addEventListener('change', () => { actualizeazaCartiere(); loadLiveTable(); });
-        document.getElementById('cartier').addEventListener('change', actualizeazaZone);
+            if(Object.keys(structuraLocatii).length === 0) {
+                orasSelect.innerHTML = '<option>Așteptare baze date...</option>';
+                return;
+            }
 
-        actualizeazaCartiere();
-        loadLiveTable();
+            Object.keys(structuraLocatii).forEach(o => {
+                orasSelect.innerHTML += `<option value="${o}">${o}</option>`;
+            });
+
+            orasSelect.addEventListener('change', () => {
+                actualizeazaCartiere();
+                loadLiveTable();
+            });
+
+            document.getElementById('cartier').addEventListener('change', actualizeazaZone);
+
+            actualizeazaCartiere();
+            loadLiveTable();
+        } catch (e) {
+            console.error("Eroare la preluarea locațiilor:", e);
+        }
     }
 
     function actualizeazaCartiere() {
         const oras = document.getElementById('oras').value;
         const cartierSelect = document.getElementById('cartier');
         cartierSelect.innerHTML = '';
-        if(!structuraLocLocations[oras]) return;
+
+        if(!oras || !structuraLocatii[oras]) return;
+
         Object.keys(structuraLocatii[oras]).forEach(c => {
             cartierSelect.innerHTML += `<option value="${c}">${c}</option>`;
         });
@@ -86,7 +125,9 @@
         const cartier = document.getElementById('cartier').value;
         const zonaSelect = document.getElementById('zona_depozitare');
         zonaSelect.innerHTML = '';
-        if(!structuraLocatii[oras] || !structuraLocatii[oras][cartier]) return;
+
+        if(!oras || !cartier || !structuraLocatii[oras][cartier]) return;
+
         structuraLocatii[oras][cartier].forEach(z => {
             zonaSelect.innerHTML += `<option value="${z}">${z}</option>`;
         });
@@ -100,61 +141,125 @@
             zona_depozitare: document.getElementById('zona_depozitare').value,
             categorie: document.getElementById('categorie').value
         };
+
         const res = await fetch('api.php?action=add', {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
         });
         const result = await res.json();
 
         const btn = e.target.querySelector('button[type="submit"]');
-        btn.innerText = "Trimis! " + result.message;
-        setTimeout(() => { btn.innerText = "Trimite Raport"; loadLiveTable(); }, 2000);
+        const textInitial = btn.innerText;
+        btn.innerText = "✅ " + result.message;
+        btn.style.background = "#218838";
+
+        setTimeout(() => {
+            btn.innerText = textInitial;
+            btn.style.background = "";
+            loadLiveTable();
+        }, 2000);
     });
 
     async function loadLiveTable() {
         try {
             const res = await fetch('api.php?action=live_table&nocache=' + Date.now());
             const dataToate = await res.json();
+
             const tabelDiv = document.getElementById('tabel-live');
             tabelDiv.innerHTML = '';
 
-            const orasCurent = document.getElementById('oras').value;
+            const orasSelect = document.getElementById('oras');
+            if (!orasSelect || !orasSelect.value) return;
+            const orasCurent = orasSelect.value;
+
+            // Ne asigurăm că backend-ul a trimis o listă corectă
+            if (!Array.isArray(dataToate)) return;
+
             const data = dataToate.filter(item => item.oras === orasCurent);
 
-            if(data.length === 0) {
-                tabelDiv.innerHTML = '<p>Nu sunt rapoarte înregistrate aici.</p>';
+            if (data.length === 0) {
+                tabelDiv.innerHTML = '<p>Nu sunt rapoarte înregistrate în acest oraș.</p>';
                 return;
             }
 
-            // Banner campion
-            let rapoarteC = {};
-            data.forEach(i => { rapoarteC[i.cartier] = (rapoarteC[i.cartier] || 0) + parseInt(i.nerezolvate); });
-            let campion = Object.keys(rapoarteC).reduce((a, b) => rapoarteC[a] < rapoarteC[b] ? a : b);
+            // 1. Calculul Campionului
+            const rapoarteCartiere = {};
+            data.forEach(item => {
+                if (!rapoarteCartiere[item.cartier]) rapoarteCartiere[item.cartier] = 0;
+                rapoarteCartiere[item.cartier] += parseInt(item.nerezolvate);
+            });
 
-            tabelDiv.innerHTML = `<div class="campion-banner">🏆 Campionul curățeniei: <span>${campion.toUpperCase()}</span></div>`;
+            let campion = null;
+            let minNerezolvate = Infinity;
+            for (const [cartier, nerezolvate] of Object.entries(rapoarteCartiere)) {
+                if (nerezolvate < minNerezolvate) {
+                    minNerezolvate = nerezolvate;
+                    campion = cartier;
+                }
+            }
 
+            if (campion) {
+                tabelDiv.innerHTML += `
+                        <div class="campion-banner">
+                            🏆 Campionul curățeniei: <span>${campion.toUpperCase()}</span>
+                        </div>
+                    `;
+            }
+
+            // 2. Generarea barelor colorate
             const listaZone = document.createElement('div');
             const maxTotal = data[0].total;
 
             data.forEach((item, index) => {
-                const r = document.createElement('div');
-                r.className = 'rand-tabel';
-                if(index >= 10) r.classList.add('rand-ascuns', 'ascuns');
+                const lungimeBaraFataDeMax = (item.total / maxTotal) * 100;
+                const procentNerezolvate = (item.nerezolvate / item.total) * 100;
+                const procentRezolvate = (item.rezolvate / item.total) * 100;
 
-                r.innerHTML = `
-                        <div class="eticheta-zona">${item.zona_depozitare}<div style="font-size:11px;color:#777;">${item.cartier}</div></div>
+                const rand = document.createElement('div');
+                rand.className = 'rand-tabel';
+                if (index >= 10) rand.classList.add('rand-ascuns', 'ascuns');
+
+                rand.innerHTML = `
+                        <div class="eticheta-zona">
+                            ${item.zona_depozitare}
+                            <div style="font-size: 11px; color: #777; margin-top: 3px;">${item.cartier}</div>
+                        </div>
                         <div class="spatiu-bara">
-                            <div class="bara-totala" style="width: ${(item.total/maxTotal)*100}%;">
-                                <div class="felie-albastra" style="width: (item.nerezolvate/item.total)*100}%"></div>
-                                <div class="felie-verde" style="width: (item.rezolvate/item.total)*100}%"></div>
+                            <div class="bara-totala" style="width: ${lungimeBaraFataDeMax}%;">
+                                <div class="felie-albastra" style="width: ${procentNerezolvate}%;" title="${item.nerezolvate} nerezolvate"></div>
+                                <div class="felie-verde" style="width: ${procentRezolvate}%;" title="${item.rezolvate} rezolvate"></div>
                             </div>
                         </div>
-                        <div class="total-text">${item.total}</div>`;
-                listaZone.appendChild(r);
+                        <div class="total-text">${item.total}</div>
+                    `;
+                listaZone.appendChild(rand);
             });
+
             tabelDiv.appendChild(listaZone);
-        } catch(e) { console.log(e); }
+
+            // 3. Butonul retractabil
+            if (data.length > 10) {
+                const btnMaiMult = document.createElement('button');
+                btnMaiMult.className = 'buton-afisare';
+                btnMaiMult.innerText = `Vezi toate cele ${data.length} zone raportate ⬇️`;
+
+                btnMaiMult.addEventListener('click', () => {
+                    const ascunse = listaZone.querySelectorAll('.rand-ascuns');
+                    if (ascunse.length === 0) return;
+                    const isAscuns = ascunse[0].classList.contains('ascuns');
+                    ascunse.forEach(el => el.classList.toggle('ascuns'));
+                    btnMaiMult.innerText = isAscuns ? 'Ascunde topul ⬆️' : `Vezi toate cele ${data.length} zone raportate ⬇️`;
+                });
+                tabelDiv.appendChild(btnMaiMult);
+            }
+
+        } catch(e) {
+            console.error("Eroare la randare tabel:", e);
+        }
     }
 
+    // Pornim aplicația automat la încărcarea paginii
     window.onload = init;
 </script>
 </body>

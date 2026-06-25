@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GaMon - Panou Control Primărie</title>
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: antiquewhite;
+        }
+        .container {
+            display: flex;
+            gap:50px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .coloana-stanga{
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius:8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .coloana-dreapta{
+            flex: 1;
+            background: white;
+            padding: 30px;
+            border-radius:8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        select, button, input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        select{
+            padding:12px 15px;
+            background-color: #afffaf;
+            font-size:15px;
+            color:#333;
+            cursor:pointer;
+            appearance:none;
+            background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat:no-repeat;
+            background-position:right 15px center;
+            background-size:16px;
+            transition: all 0.2s ease;
+        }
+
+        select:focus, input:focus{
+            outline:none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.2);
+            background-color: #fff;
+        }
+
+        .campion-banner{
+            background: linear-gradient(135deg, #ffd700, #ffb300);
+            color: #000;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 16px;
+        }
+
+        .buton-afisare{
+            background:#6c757d;
+            margin-top:15px;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .buton-afisare:hover{
+            background: #5a6268;
+            transform: scale(1.01);
+        }
+        .ascuns{
+            display:none !important;
+        }
+
+        button{
+            background:#007bff;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor:pointer;
+            transition: all 0.3s ease-in-out;
+        }
+        button:hover{
+            background: #0056b3;
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .btn-verde {
+            background: #28a745;
+        }
+        .btn-verde:hover {
+            background: #218838;
+        }
+
+        h2, h3{
+            color: #333;
+            margin-top: 0;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 25px 0;
+        }
+
+        .info-user {
+            font-size: 14px;
+            color: #212529;
+            margin-bottom: 15px;
+            background: #e9ecef;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            border-left: 5px solid #007bff;
+        }
+
+        /* ===LIVE TABLE STYLE=== */
+        .rand-tabel{
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .eticheta-zona {
+            width: 180px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .spatiu-bara{
+            flex:1;
+            margin:0 15px;
+            display: flex;
+            align-items:center;
+        }
+
+        .bara-totala {
+            height: 20px;
+            background-color: #e0e0e0;
+            display: flex;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100%;
+        }
+        .felie-albastra {
+            height: 100%;
+            background-color: #007bff;
+            transition: width 0.3s;
+        }
+        .felie-verde {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s;
+        }
+
+        .total-text {
+            width: 40px;
+            text-align: right;
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="coloana-stanga">
+        <h2>Gestiune Administrativă</h2>
+        <div id="infoPrimarie" class="info-user">Se încarcă profilul...</div>
+
+        <form id="adminActionForm">
+            <label>Cartier:</label>
+            <select id="cartier"></select>
+
+            <label>Zonă Colectare / Depozitare:</label>
+            <select id="zona_depozitare"></select>
+
+            <label>Echipă Salubrizare Alocată:</label>
+            <select id="echipa">
+                <option value="Salubris Centru">Salubris Centru</option>
+                <option value="Salubris Copou">Salubris Copou</option>
+                <option value="Salubris Tătărași">Salubris Tătărași</option>
+                <option value="Salubris Păcurari">Salubris Păcurari</option>
+                <option value="Salubris Nicolina">Salubris Nicolina</option>
+            </select>
+
+            <button type="submit" id="btnAloca">Alocă Echipă & Trimite în Lucru</button>
+            <button type="button" id="btnConfirma" class="btn-verde">✅ Confirmă & Setează ca Soluționat</button>
+        </form>
+
+        <hr>
+
+        <h3>Adaugă o Zonă Nouă de Colectare</h3>
+        <form id="addLocationForm">
+            <label>Nume Cartier Nou:</label>
+            <input type="text" id="locCartier" placeholder="Ex: Păcurari" required>
+            <label>Nume Punct / Zonă Nouă:</label>
+            <input type="text" id="locZona" placeholder="Ex: Punct Colectare Moara 1 Mai" required>
+            <button type="submit" class="btn-verde">Salvează Zona în Sistem</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 25px;">
+            <a href="portal.html" style="color: #6c757d; text-decoration: none; font-weight: bold;">➔ Înapoi în Portalul principal</a>
+        </p>
+    </div>
+
+    <div class="coloana-dreapta">
+        <h2>Rapoarte Live pe Zone (Vizualizare Admin)</h2>
+        <div id="tabel-live">Se încarcă datele...</div>
+    </div>
+</div>
+
+<script>
+    // Preluăm utilizatorul din localStorage
+    const user = JSON.parse(localStorage.getItem('user'));
+    if(!user || user.role !== 'primarie') {
+        window.location.href = 'login.html';
+    }
+
+    // Afișăm instituția și contul oficial de e-mail
+    document.getElementById('infoPrimarie').innerHTML = `🏢 Primăria: ${user.oras}<br>✉️ Cont: ${user.username}`;
+
+    let structuraLocatii = {};
+
+    async function init() {
+        try {
+            const res = await fetch('api.php?action=get_locations');
+            structuraLocatii = await res.json();
+
+            document.getElementById('cartier').addEventListener('change', actualizeazaZone);
+
+            // Generăm dropdown-urile direct pentru orașul salvat în user
+            actualizeazaCartiere();
+            loadLiveTable();
+        } catch (e) {
+            console.error("Eroare la inițializare locații administrativ:", e);
+        }
+    }
+
+    function actualizeazaCartiere() {
+        const orasSecurizat = user.oras;
+        const cartierSelect = document.getElementById('cartier');
+        cartierSelect.innerHTML = '';
+
+        if(!orasSecurizat || !structuraLocatii[orasSecurizat]) {
+            cartierSelect.innerHTML = '<option>Nu sunt zone definite</option>';
+            return;
+        }
+
+        Object.keys(structuraLocatii[orasSecurizat]).forEach(c => {
+            cartierSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+        actualizeazaZone();
+    }
+
+    function actualizeazaZone() {
+        const orasSecurizat = user.oras;
+        const cartier = document.getElementById('cartier').value;
+        const zonaSelect = document.getElementById('zona_depozitare');
+        zonaSelect.innerHTML = '';
+
+        if(!orasSecurizat || !cartier || !structuraLocatii[orasSecurizat][cartier]) return;
+
+        structuraLocatii[orasSecurizat][cartier].forEach(z => {
+            zonaSelect.innerHTML += `<option value="${z}">${z}</option>`;
+        });
+    }
+
+    // Trimitere în Lucru către Echipă
+    document.getElementById('adminActionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            oras: user.oras, // Securizat din sesiune
+            cartier: document.getElementById('cartier').value,
+            zona_depozitare: document.getElementById('zona_depozitare').value,
+            echipa: document.getElementById('echipa').value,
+            status: 'In Lucru'
+        };
+
+        await fetch('api.php?action=update_report_status_bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const btn = document.getElementById('btnAloca');
+        const textInitial = btn.innerText;
+        btn.innerText = "⏳ Misiune expediată echipei!";
+        setTimeout(() => { btn.innerText = textInitial; loadLiveTable(); }, 2000);
+    });
+
+    // Confirmare Soluționare (Crește procentajul barelor verzi)
+    document.getElementById('btnConfirma').addEventListener('click', async () => {
+        const data = {
+            oras: user.oras, // Securizat din sesiune
+            cartier: document.getElementById('cartier').value,
+            zona_depozitare: document.getElementById('zona_depozitare').value,
+            status: 'Soluționat'
+        };
+
+        await fetch('api.php?action=update_report_status_bulk', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const btn = document.getElementById('btnConfirma');
+        const textInitial = btn.innerText;
+        btn.innerText = "✅ Confirmat! Barele verzi actualizate.";
+        setTimeout(() => { btn.innerText = textInitial; loadLiveTable(); }, 2000);
+    });
+
+    // Adăugare Zonă Nouă direct în municipiul curent
+    document.getElementById('addLocationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            oras: user.oras, // Forțat pe orașul adminului logat
+            cartier: document.getElementById('locCartier').value,
+            zona_depozitare: document.getElementById('locZona').value
+        };
+
+        await fetch('api.php?action=add_location', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        alert('Zona nouă a fost mapată cu succes!');
+        e.target.reset();
+        init(); // Reîmprospătează dropdown-urile automat
+    });
+
+    // Funcția de afișare tabel live - complet izolată pe orașul curent
+    async function loadLiveTable() {
+        try {
+            const response = await fetch('api.php?action=live_table&nocache=' + Date.now());
+            const dataToate = await response.json();
+
+            const tabelDiv = document.getElementById('tabel-live');
+            tabelDiv.innerHTML = '';
+
+            const orasCurent = user.oras; // Nu mai citește din dropdown, folosește variabila securizată
+            const data = dataToate.filter(item => item.oras === orasCurent);
+
+            if (data.length === 0) {
+                tabelDiv.innerHTML = '<p>Nu sunt rapoarte active înregistrate în acest municipiu.</p>';
+                return;
+            }
+
+            // Calculul Campionului
+            const rapoarteCartiere = {};
+            data.forEach(item => {
+                if (!rapoarteCartiere[item.cartier]) rapoarteCartiere[item.cartier] = 0;
+                rapoarteCartiere[item.cartier] += parseInt(item.nerezolvate);
+            });
+
+            let campion = null;
+            let minNerezolvate = Infinity;
+            for (const [cartier, nerezolvate] of Object.entries(rapoarteCartiere)) {
+                if (nerezolvate < minNerezolvate) {
+                    minNerezolvate = nerezolvate;
+                    campion = cartier;
+                }
+            }
+
+            if (campion) {
+                tabelDiv.innerHTML += `
+                        <div class="campion-banner">
+                            🏆 Campionul curățeniei în ${orasCurent}: <span>${campion.toUpperCase()}</span>
+                        </div>
+                    `;
+            }
+
+            // Generarea barelor colorate
+            data.sort((a, b) => b.total - a.total);
+            const maxTotalGlobal = data[0].total;
+            const listaZone = document.createElement('div');
+
+            data.forEach((item, index) => {
+                const lungimeBaraFataDeMax = (item.total / maxTotalGlobal) * 100;
+                const procentNerezolvate = (item.nerezolvate / item.total) * 100;
+                const procentRezolvate = (item.rezolvate / item.total) * 100;
+
+                const rand = document.createElement('div');
+                rand.className = 'rand-tabel';
+                if (index >= 10) rand.classList.add('rand-ascuns', 'ascuns');
+
+                rand.innerHTML = `
+                        <div class="eticheta-zona">
+                            ${item.zona_depozitare}
+                            <div style="font-size: 11px; color: #777; margin-top: 3px;">${item.cartier}</div>
+                        </div>
+                        <div class="spatiu-bara">
+                            <div class="bara-totala" style="width: ${lungimeBaraFataDeMax}%;">
+                                <div class="felie-albastra" style="width: ${procentNerezolvate}%;" title="${item.nerezolvate} nerezolvate"></div>
+                                <div class="felie-verde" style="width: ${procentRezolvate}%;" title="${item.rezolvate} rezolvate"></div>
+                            </div>
+                        </div>
+                        <div class="total-text">${item.total}</div>
+                    `;
+                listaZone.appendChild(rand);
+            });
+
+            tabelDiv.appendChild(listaZone);
+
+            if (data.length > 10) {
+                const btnMaiMult = document.createElement('button');
+                btnMaiMult.className = 'buton-afisare';
+                btnMaiMult.innerText = `Vezi toate cele ${data.length} zone raportate`;
+
+                btnMaiMult.addEventListener('click', () => {
+                    const ascunse = listaZone.querySelectorAll('.rand-ascuns');
+                    const isAscuns = ascunse[0].classList.contains('ascuns');
+                    ascunse.forEach(el => el.classList.toggle('ascuns'));
+                    btnMaiMult.innerText = isAscuns ? 'Ascunde topul' : `Vezi toate cele ${data.length} zone raportate`
+                });
+                tabelDiv.appendChild(btnMaiMult);
+            }
+
+        } catch (eroare) {
+            console.error("Eroare la redarea graficului:", eroare);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

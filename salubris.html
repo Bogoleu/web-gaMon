@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>GaMon - Operator Salubrizare</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f7; margin: 40px; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #343a40; color: white; }
+        .btn { background: #007bff; color: white; padding: 8px 15px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        .status { font-weight: bold; color: #dc3545; }
+        .status.lucru { color: #ffc107; }
+        .status.asteptare { color: #28a745; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>Sistem Gestionare Salubrizare S.A.</h2>
+    <h4 id="salubrisInfo">Echipa: ...</h4>
+    <p><a href="login.html" onclick="localStorage.clear()">Ieșire din cont</a></p>
+    <hr>
+
+    <h3>Misiuni de igienizare active în sectorul tău:</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>Zonă Depozitare</th><th>Categorie Gunoi</th><th>Status Curent</th><th>Raportare Teren</th>
+        </tr>
+        </thead>
+        <tbody id="tabelMisiuni"></tbody>
+    </table>
+</div>
+
+<script>
+    const user = JSON.parse(localStorage.getItem('user'));
+    if(!user || user.role !== 'salubris') window.location.href = 'login.html';
+    document.getElementById('salubrisInfo').innerText = `Sector Alocat: ${user.oras} - Cartier ${user.cartier_alocat}`;
+
+    async function loadMisiuni() {
+        const res = await fetch('api.php?action=admin_reports');
+        const reports = await res.json();
+        const tbody = document.getElementById('tabelMisiuni');
+        tbody.innerHTML = '';
+
+        // Agenția vede doar problemele nerezolvate/în lucru din cartierul ei specfic
+        const sector = reports.filter(r => r.oras === user.oras && r.cartier === user.cartier_alocat && r.status !== 'Soluționat');
+
+        if(sector.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;"Toate zonele din sectorul tău sunt curate.</td></tr>';
+            return;
+        }
+
+        sector.forEach(r => {
+            let actiune = '';
+            let textStatus = `<span class="status text-red">Nerezolvat (Așteaptă Alocare Primărie)</span>`;
+
+            if(r.status === 'In Lucru') {
+                textStatus = `<span class="status lucru">În Desfășurare</span>`;
+                actiune = `<button class="btn" onclick="raporteazaCurat(${r.id})">Am curățat zona!</button>`;
+            } else if(r.status === 'Curatat') {
+                textStatus = `<span class="status asteptare">Trimis la Validare Primărie</span>`;
+                actiune = `<i>În așteptarea inspectorului</i>`;
+            }
+
+            tbody.innerHTML += `
+                    <tr>
+                        <td><b>${r.zona_depozitare}</b></td><td>${r.categorie}</td><td>${textStatus}</td><td>${actiune}</td>
+                    </tr>`;
+        });
+    }
+
+    async function raporteazaCurat(id) {
+        await fetch('api.php?action=update_report_status', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id, status: 'Curatat' })
+        });
+        loadMisiuni();
+    }
+
+    window.onload = loadMisiuni;
+</script>
+</body>
+</html>

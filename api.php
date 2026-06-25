@@ -47,10 +47,16 @@ if ($verifLoc == 0) {
 
 $verifUser = $db->query("SELECT COUNT(*) FROM utilizatori")->fetchColumn();
 if ($verifUser == 0) {
-    // Conturi de test: primarie / iasi123  SI  salubris / copou123
     $db->exec("INSERT INTO utilizatori (username, password, role, oras, cartier_alocat) VALUES
-        ('primarie', 'iasi123', 'primarie', 'Iași', NULL),
-        ('salubris', 'copou123', 'salubris', 'Iași', 'Copou')");
+        /* Conturi oficiale Primării */
+        ('iasi@mail.ro', 'iasi123', 'primarie', 'Iași', NULL),
+        ('pascani@mail.ro', 'pascani123', 'primarie', 'Pașcani', NULL),
+        ('cluj-napoca@mail.ro', 'cluj123', 'primarie', 'Cluj-Napoca', NULL),
+
+        /* Conturi oficiale e-mail pentru Echipele Salubris */
+        ('salubris.copou@mail.ro', 'copou123', 'salubris', 'Iași', 'Copou'),
+        ('salubris.centru@mail.ro', 'centru123', 'salubris', 'Iași', 'Centru'),
+        ('salubris.tatarasi@mail.ro', 'tatarasi123', 'salubris', 'Iași', 'Tătărași')");
 }
 
 // 2. CRON JOB INVIZIBIL: Șterge automat soluționările mai vechi de 30 de zile
