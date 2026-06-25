@@ -64,7 +64,7 @@
             </select>
             <button type="submit">Trimite Raport</button>
         </form>
-        <a href="login.html" class="btn-primarie">🏢 Autentificare Administrație ➔</a>
+        <a href="login_primarie.html" class="btn-primarie">🏢 Autentificare Administrație ➔</a>
     </div>
     <div class="coloana-dreapta">
         <h2>Rapoarte Live pe Zone</h2>
@@ -93,7 +93,13 @@
                 orasSelect.innerHTML += `<option value="${o}">${o}</option>`;
             });
 
+            const orasSalvat = localStorage.getItem('gamon_oras');
+            if (orasSalvat && structuraLocatii[orasSalvat]) {
+                orasSelect.value = orasSalvat;
+            }
+
             orasSelect.addEventListener('change', () => {
+                localStorage.setItem('gamon_oras', document.getElementById('oras').value);
                 actualizeazaCartiere();
                 loadLiveTable();
             });
@@ -183,18 +189,18 @@
                 return;
             }
 
-            // 1. Calculul Campionului
+            // 1. Calculul Campionului (cele mai puține reclamații totale)
             const rapoarteCartiere = {};
             data.forEach(item => {
                 if (!rapoarteCartiere[item.cartier]) rapoarteCartiere[item.cartier] = 0;
-                rapoarteCartiere[item.cartier] += parseInt(item.nerezolvate);
+                rapoarteCartiere[item.cartier] += parseInt(item.total);
             });
 
             let campion = null;
-            let minNerezolvate = Infinity;
-            for (const [cartier, nerezolvate] of Object.entries(rapoarteCartiere)) {
-                if (nerezolvate < minNerezolvate) {
-                    minNerezolvate = nerezolvate;
+            let minim = Infinity;
+            for (const [cartier, total] of Object.entries(rapoarteCartiere)) {
+                if (total < minim) {
+                    minim = total;
                     campion = cartier;
                 }
             }

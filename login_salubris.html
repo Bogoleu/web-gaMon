@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>GaMon - Autentificare Salubris</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: antiquewhite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 340px;
+        }
+        .badge {
+            background: #ffc107;
+            color: #000;
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+        h2 { margin-top: 0; color: #333; }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+        button {
+            background: #ffc107;
+            color: #000;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+        button:hover { background: #e0a800; }
+        #error { color: red; text-align: center; min-height: 20px; font-size: 14px; }
+        .link-separator {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #888;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .link-separator a {
+            color: #007bff;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .link-separator a:hover { text-decoration: underline; }
+        .link-back {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #aaa;
+            text-decoration: none;
+        }
+        .link-back:hover { color: #555; }
+
+        .sesiune-activa {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #5d4037;
+            display: none;
+        }
+        .sesiune-activa strong { display: block; margin-bottom: 6px; }
+        .btn-grup { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-grup button { flex: 1; padding: 8px; font-size: 13px; margin: 0; }
+        .btn-continua { background: #ffc107; color: #000; }
+        .btn-continua:hover { background: #e0a800; }
+        .btn-logout { background: #6c757d; color: white; }
+        .btn-logout:hover { background: #545b62; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="badge">🚛 PORTAL ECHIPE SALUBRIZARE</div>
+    <h2>Autentificare Operator</h2>
+
+    <div class="sesiune-activa" id="sesiuneBanner">
+        <strong>Sesiune activă detectată</strong>
+        <span id="sesiuneInfo"></span>
+        <div class="btn-grup">
+            <button class="btn-continua" onclick="window.location.href='salubris.html'">Continuă sesiunea</button>
+            <button class="btn-logout" onclick="delogheaza()">Schimbă contul</button>
+        </div>
+    </div>
+
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="E-mail echipă" required autocomplete="username">
+        <input type="password" id="password" placeholder="Parolă" required autocomplete="current-password">
+        <button type="submit">Intră în Panoul Salubris</button>
+    </form>
+    <p id="error"></p>
+
+    <div class="link-separator">
+        Ești administrator Primărie? &nbsp;
+        <a href="login_primarie.html">Accesează portalul Primăriei →</a>
+    </div>
+    <a href="portal.html" class="link-back">← Înapoi la portal</a>
+</div>
+
+<script>
+    function delogheaza() {
+        localStorage.removeItem('user');
+        document.getElementById('sesiuneBanner').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+    }
+
+    const userExistent = JSON.parse(localStorage.getItem('user') || 'null');
+    if (userExistent && userExistent.role === 'salubris') {
+        document.getElementById('sesiuneInfo').innerText =
+            `Ești conectat ca: ${userExistent.username} (${userExistent.oras} - ${userExistent.cartier_alocat})`;
+        document.getElementById('sesiuneBanner').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'none';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = document.getElementById('error');
+        errEl.innerText = '';
+
+        const res = await fetch('api.php?action=login_salubris', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            })
+        });
+
+        const data = await res.json();
+        if (data.status === 'success') {
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.location.href = 'salubris.html';
+        } else {
+            errEl.innerText = data.message;
+        }
+    });
+</script>
+</body>
+</html>

@@ -183,6 +183,14 @@
             font-weight: bold;
             color: #555;
         }
+
+        .sectiune-validari { margin-top: 30px; border-top: 2px dashed #ddd; padding-top: 20px; }
+        .rand-validare { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; background: #fcfcfc; border: 1px solid #e9ecef; border-left: 4px solid #28a745; }
+        .rand-validare .info { flex: 1; }
+        .rand-validare .zona { font-weight: bold; font-size: 14px; }
+        .rand-validare .meta { font-size: 12px; color: #888; margin-top: 2px; }
+        .btn-confirma { background: #28a745; color: white; border: none; border-radius: 4px; padding: 8px 16px; font-weight: bold; cursor: pointer; font-size: 13px; transition: all 0.2s; flex-shrink: 0; }
+        .btn-confirma:hover { background: #218838; transform: scale(1.03); }
     </style>
 </head>
 <body>
@@ -208,7 +216,6 @@
             </select>
 
             <button type="submit" id="btnAloca">Alocă Echipă & Trimite în Lucru</button>
-            <button type="button" id="btnConfirma" class="btn-verde">✅ Confirmă & Setează ca Soluționat</button>
         </form>
 
         <hr>
@@ -230,6 +237,11 @@
     <div class="coloana-dreapta">
         <h2>Rapoarte Live pe Zone (Vizualizare Admin)</h2>
         <div id="tabel-live">Se încarcă datele...</div>
+
+        <div class="sectiune-validari" id="sectiuneValidari">
+            <h3>Validări Pendinte de la Salubris</h3>
+            <div id="lista-validari">Se încarcă...</div>
+        </div>
     </div>
 </div>
 
@@ -237,7 +249,7 @@
     // Preluăm utilizatorul din localStorage
     const user = JSON.parse(localStorage.getItem('user'));
     if(!user || user.role !== 'primarie') {
-        window.location.href = 'login.html';
+        window.location.href = 'login_primarie.html';
     }
 
     // Afișăm instituția și contul oficial de e-mail
@@ -255,6 +267,7 @@
             // Generăm dropdown-urile direct pentru orașul salvat în user
             actualizeazaCartiere();
             loadLiveTable();
+            loadPendingValidari();
         } catch (e) {
             console.error("Eroare la inițializare locații administrativ:", e);
         }
@@ -309,28 +322,7 @@
         const btn = document.getElementById('btnAloca');
         const textInitial = btn.innerText;
         btn.innerText = "⏳ Misiune expediată echipei!";
-        setTimeout(() => { btn.innerText = textInitial; loadLiveTable(); }, 2000);
-    });
-
-    // Confirmare Soluționare (Crește procentajul barelor verzi)
-    document.getElementById('btnConfirma').addEventListener('click', async () => {
-        const data = {
-            oras: user.oras, // Securizat din sesiune
-            cartier: document.getElementById('cartier').value,
-            zona_depozitare: document.getElementById('zona_depozitare').value,
-            status: 'Soluționat'
-        };
-
-        await fetch('api.php?action=update_report_status_bulk', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
-
-        const btn = document.getElementById('btnConfirma');
-        const textInitial = btn.innerText;
-        btn.innerText = "✅ Confirmat! Barele verzi actualizate.";
-        setTimeout(() => { btn.innerText = textInitial; loadLiveTable(); }, 2000);
+        setTimeout(() => { btn.innerText = textInitial; loadLiveTable(); loadPendingValidari(); }, 2000);
     });
 
     // Adăugare Zonă Nouă direct în municipiul curent
@@ -370,18 +362,18 @@
                 return;
             }
 
-            // Calculul Campionului
+            // Calculul Campionului (cele mai puține reclamații totale)
             const rapoarteCartiere = {};
             data.forEach(item => {
                 if (!rapoarteCartiere[item.cartier]) rapoarteCartiere[item.cartier] = 0;
-                rapoarteCartiere[item.cartier] += parseInt(item.nerezolvate);
+                rapoarteCartiere[item.cartier] += parseInt(item.total);
             });
 
             let campion = null;
-            let minNerezolvate = Infinity;
-            for (const [cartier, nerezolvate] of Object.entries(rapoarteCartiere)) {
-                if (nerezolvate < minNerezolvate) {
-                    minNerezolvate = nerezolvate;
+            let minim = Infinity;
+            for (const [cartier, total] of Object.entries(rapoarteCartiere)) {
+                if (total < minim) {
+                    minim = total;
                     campion = cartier;
                 }
             }
@@ -443,6 +435,47 @@
         } catch (eroare) {
             console.error("Eroare la redarea graficului:", eroare);
         }
+    }
+
+    async function loadPendingValidari() {
+        try {
+            const res = await fetch(`api.php?action=admin_reports&oras=${encodeURIComponent(user.oras)}&nocache=${Date.now()}`);
+            const reports = await res.json();
+
+            const container = document.getElementById('lista-validari');
+            container.innerHTML = '';
+
+            const pendinte = reports.filter(r => r.status === 'Curatat');
+
+            if (pendinte.length === 0) {
+                container.innerHTML = '<p style="color: #888; font-style: italic;">Nu sunt validări pendinte.</p>';
+                return;
+            }
+
+            pendinte.forEach(r => {
+                const rand = document.createElement('div');
+                rand.className = 'rand-validare';
+                rand.innerHTML = `
+                    <div class="info">
+                        <div class="zona">${r.zona_depozitare}</div>
+                        <div class="meta">${r.cartier} — ${r.categorie} — ${r.echipa_alocata}</div>
+                    </div>
+                    <button class="btn-confirma" onclick="confirmaSalubris(${r.id})">Confirmă Rezolvat</button>
+                `;
+                container.appendChild(rand);
+            });
+        } catch (e) {
+            console.error('Eroare la încărcarea validărilor:', e);
+        }
+    }
+
+    async function confirmaSalubris(id) {
+        await fetch('api.php?action=update_report_status', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id, status: 'Soluționat' })
+        });
+        loadPendingValidari();
+        loadLiveTable();
     }
 
     window.onload = init;
